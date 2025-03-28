@@ -113,8 +113,8 @@ class AuthController extends Controller
         $users->interests = $interests;
         $users->describe_yourself = $describe_yourself;
         $users->datetime = Carbon::now();
-        // $users->coins = 30; // Add default coins
-        // $users->total_coins = 30; // Add default total coins
+        $users->coins = 10; // Add default coins
+         $users->total_coins = 10; // Add default total coins
     
         $users->save();
     
@@ -552,80 +552,102 @@ class AuthController extends Controller
             'data' => $coinsData,
         ], 200);
     }
-    public function best_offers(Request $request)
-    {
-        $authenticatedUser = auth('api')->user();
-        if (!$authenticatedUser) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized. Please provide a valid token.',
-            ], 401);
-        }
-
-        $user_id = $request->input('user_id');
-        $offset = $request->input('offset', 0);  // Default offset to 0 if not provided
-        $limit = $request->input('limit', 10);  // Default limit to 10 if not provided
-
-        if (empty($user_id)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'user_id is empty.',
-            ], 200);
-        }
-
-        $user = Users::find($user_id);
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'User not found.',
-            ], 200);
-        }
-
-        // Determine the query based on user's coins
-        if ($user->coins == 0) {
-            $coins = Coins::where('id', 10)
-                          ->orderBy('price', 'asc')
-                          ->skip($offset)
-                          ->take($limit)
-                          ->get();
-        } else {
-            $coins = Coins::where('id', 5)
-                          ->orderBy('price', 'asc')
-                          ->skip($offset)
-                          ->take($limit)
-                          ->get();
-        }
-
-        if ($coins->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No Best Offer data available.',
-            ], 200);
-        }
-
-        $coinsData = $coins->map(function ($coin) {
-            return [
-                'id' => $coin->id,
-                'price' => $coin->price,
-                'coins' => $coin->coins,
-                'save' => $coin->save,
-                'popular' => $coin->popular,
-                'best_offer' => $coin->best_offer,
-                'updated_at' => Carbon::parse($coin->updated_at)->format('Y-m-d H:i:s'),
-                'created_at' => Carbon::parse($coin->created_at)->format('Y-m-d H:i:s'),
-            ];
-        });
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Best Offers listed successfully.',
-            'total' => $coins->count(),
-            'data' => $coinsData,
-        ], 200);
-    }
-public function transaction_list(Request $request)
+          public function best_offers(Request $request)
 {
     $authenticatedUser = auth('api')->user();
+    if (!$authenticatedUser) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized. Please provide a valid token.',
+        ], 401);
+    }
+
+    $user_id = $request->input('user_id');
+    $offset = $request->input('offset', 0);  // Default offset to 0 if not provided
+    $limit = $request->input('limit', 10);   // Default limit to 10 if not provided
+
+    if (empty($user_id)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'user_id is empty.',
+        ], 200);
+    }
+
+    $user = Users::find($user_id);
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'User not found.',
+        ], 200);
+    }
+
+    $transactionsCount = 0;
+
+    // **Only check transactions if user has 1 or more coins**
+    if ($user->coins > 0) {
+        $transactionsCount = Transactions::where('type', 'add_coins')
+            ->where('datetime', '>=', Carbon::now()->subDays(3))
+            ->count();
+
+            $transactionsCount += 50;
+    }
+
+    // **Determine coin offers based on user's coins**
+    if ($user->coins == 0) {
+        $coins = Coins::where('id', 9)
+                      ->orderBy('price', 'asc')
+                      ->skip($offset)
+                      ->take($limit)
+                      ->get();
+    } else {
+        $coins = Coins::where('id', 5)
+                      ->orderBy('price', 'asc')
+                      ->skip($offset)
+                      ->take($limit)
+                      ->get();
+    }
+
+    if ($coins->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No Best Offer data available.',
+        ], 200);
+    }
+
+    // **Map Coins Data with Transaction Count (Only if user has 1+ coins)**
+    $coinsData = $coins->map(function ($coin) use ($transactionsCount, $user) {
+        $data = [
+            'id' => $coin->id,
+            'price' => $coin->price,
+            'coins' => $coin->coins,
+            'save' => $coin->save,
+            'popular' => $coin->popular,
+            'total_count' => $coin->count ?? 0,
+            'best_offer' => $coin->best_offer,
+            'updated_at' => Carbon::parse($coin->updated_at)->format('Y-m-d H:i:s'),
+            'created_at' => Carbon::parse($coin->created_at)->format('Y-m-d H:i:s'),
+        ];
+
+        // **Only include transactions count if user has coins > 0**
+        if ($user->coins > 0) {
+            $data['total_count'] = $transactionsCount;
+        }
+
+        return $data;
+    });
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Best Offers listed successfully.',
+        'total' => $coins->count(),
+        'data' => $coinsData,
+    ], 200);
+}
+
+
+public function transaction_list(Request $request) {
+    $authenticatedUser = auth('api')->user();
+
     if (!$authenticatedUser) {
         return response()->json([
             'success' => false,
@@ -642,10 +664,32 @@ public function transaction_list(Request $request)
         ], 200);
     }
 
-    // Retrieve all transactions for the given user without offset and limit
-    $transactions = Transactions::where('user_id', $user_id)
-        ->orderBy('datetime', 'desc')
-        ->get();
+    // Query without offset and limit
+    $transactions = Transactions::where('transactions.user_id', $user_id)
+        ->leftJoin('user_calls', function ($join) {
+            $join->on('transactions.user_id', '=', 'user_calls.user_id')
+                 ->on('transactions.datetime', '=', 'user_calls.update_current_endedtime');
+        })
+        ->leftJoin('users as call_users', 'user_calls.call_user_id', '=', 'call_users.id')
+        ->select(
+            'transactions.*',
+            'user_calls.call_user_id',
+            'call_users.name as call_user_name',
+            'user_calls.started_time',
+            'user_calls.ended_time',
+            'user_calls.coins_spend',
+            'user_calls.type as call_type'
+        )
+        // Always filter coins_deduction with coins >= 10
+        ->where(function ($query) {
+            $query->where('transactions.type', '<>', 'coins_deduction')
+                  ->orWhere(function ($q) {
+                      $q->where('transactions.type', '=', 'coins_deduction')
+                        ->where('transactions.coins', '>=', 10);
+                  });
+        })
+        ->orderBy('transactions.datetime', 'desc')
+        ->get();  // Removed offset and limit
 
     if ($transactions->isEmpty()) {
         return response()->json([
@@ -654,27 +698,74 @@ public function transaction_list(Request $request)
         ], 200);
     }
 
+    // Prepare the response data
     $transactionsData = [];
+
     foreach ($transactions as $transaction) {
-        $transactionsData[] = [
+        $data = [
             'id' => $transaction->id,
             'user_id' => $transaction->user_id,
             'type' => $transaction->type,
-            'amount' => $transaction->amount ?? '', 
-            'coins' => $transaction->coins,
+            'amount' => $transaction->amount ?? '',
             'payment_type' => $transaction->payment_type ?? '',
             'datetime' => $transaction->datetime,
             'date' => Carbon::parse($transaction->datetime)->format('M d'),
+            'coins' => $transaction->coins ?? 0,
         ];
+
+        // Include call details only for `coins_deduction`
+        if ($transaction->type === 'coins_deduction' && $transaction->call_user_id) {
+            $call_user_id = $transaction->call_user_id;
+            $call_user_name = $transaction->call_user_name ?? 'N/A';
+            $started_time = $transaction->started_time ?? 'N/A';
+            $ended_time = $transaction->ended_time ?? 'N/A';
+            $coins_spend = $transaction->coins_spend ?? 0;
+            $call_type = $transaction->call_type ?? 'N/A';
+
+            // Calculate duration if both times are present
+            $duration = 'N/A';
+            if (!empty($transaction->started_time) && !empty($transaction->ended_time)) {
+                $start = Carbon::parse($transaction->started_time);
+                $end = Carbon::parse($transaction->ended_time);
+                $diffInSeconds = $start->diffInSeconds($end);
+
+                $hours = floor($diffInSeconds / 3600);
+                $minutes = floor(($diffInSeconds % 3600) / 60);
+                $seconds = $diffInSeconds % 60;
+
+                $duration = trim(
+                    ($hours > 0 ? "{$hours} hour" . ($hours > 1 ? 's ' : ' ') : '') .
+                    ($minutes > 0 ? "{$minutes} min " : '') .
+                    ($seconds > 0 ? "{$seconds} sec" : '')
+                );
+            }
+
+            // Add call details to the transaction data
+            $data = array_merge($data, [
+                'call_user_id' => $call_user_id,
+                'call_user_name' => $call_user_name,
+                'started_time' => $started_time,
+                'ended_time' => $ended_time,
+                'duration' => $duration,
+                'coins' => $coins_spend,
+                'call_type' => $call_type
+            ]);
+        }
+
+        $transactionsData[] = $data;
     }
+
+    // Correct total count with filtering applied
+    $total = $transactions->count();
 
     return response()->json([
         'success' => true,
         'message' => 'User transaction list retrieved successfully.',
-        'total' => $transactions->count(),
+        'total' => $total,
         'data' => $transactionsData,
     ], 200);
 }
+
 
     public function avatar_list(Request $request)
     {
@@ -820,8 +911,7 @@ public function settings_list(Request $request)
             'support_mail' => $item->support_mail,
             'demo_video' => $item->demo_video,
             'minimum_withdrawals' => $item->minimum_withdrawals,
-            'payment_gateway' => 'upigateway',
-            'payment_gateway_type' => 'upigateway',
+            'payment_gateway_type' => $item->payment_gateway_type,
         ];
     }
 
