@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Users;
 use App\Models\Withdrawals;
 use App\Models\Transactions;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Exports\WithdrawalsExport; 
 use Maatwebsite\Excel\Facades\Excel;
@@ -241,5 +242,40 @@ class WithdrawalsController extends Controller
     return Excel::download(new WithdrawalsExport($filters), 'withdrawals.xlsx');
 }
 
-  
+public function show($id)
+{
+    $withdrawal = Withdrawals::with('users')->findOrFail($id);
+
+    return view('withdrawals.show', compact('withdrawal'));
+}
+
+public function withdrawalsReport(Request $request)
+{
+    // Get the date from the request
+    $date = $request->input('date');
+
+    // Query builder
+    $query = Withdrawals::where('status', 1)
+        ->select(DB::raw('DATE(datetime) as date'), DB::raw('SUM(amount) as total'))
+        ->groupBy('date');
+
+    // Apply date filter only if a date is selected
+    if ($date) {
+        try {
+            $formattedDate = Carbon::createFromFormat('Y-m-d', $date)->format('Y-m-d');
+            $query->whereDate('datetime', $formattedDate);
+        } catch (\Exception $e) {
+            return back()->with('error', __('Invalid date format.'));
+        }
+    }
+
+    // Get the filtered or all results
+    $withdrawals = $query->get();
+
+    // Calculate the grand total (all data or filtered)
+    $grandTotal = $withdrawals->sum('total');
+
+    return view('withdrawalsreports.index', compact('withdrawals', 'grandTotal', 'date'));
+}
+
 }

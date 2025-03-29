@@ -552,98 +552,101 @@ class AuthController extends Controller
             'data' => $coinsData,
         ], 200);
     }
-          public function best_offers(Request $request)
-{
-    $authenticatedUser = auth('api')->user();
-    if (!$authenticatedUser) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Unauthorized. Please provide a valid token.',
-        ], 401);
-    }
-
-    $user_id = $request->input('user_id');
-    $offset = $request->input('offset', 0);  // Default offset to 0 if not provided
-    $limit = $request->input('limit', 10);   // Default limit to 10 if not provided
-
-    if (empty($user_id)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'user_id is empty.',
-        ], 200);
-    }
-
-    $user = Users::find($user_id);
-    if (!$user) {
-        return response()->json([
-            'success' => false,
-            'message' => 'User not found.',
-        ], 200);
-    }
-
-    $transactionsCount = 0;
-
-    // **Only check transactions if user has 1 or more coins**
-    if ($user->coins > 0) {
-        $transactionsCount = Transactions::where('type', 'add_coins')
-            ->where('datetime', '>=', Carbon::now()->subDays(3))
-            ->count();
-
-            $transactionsCount += 50;
-    }
-
-    // **Determine coin offers based on user's coins**
-    if ($user->coins == 0) {
-        $coins = Coins::where('id', 9)
-                      ->orderBy('price', 'asc')
-                      ->skip($offset)
-                      ->take($limit)
-                      ->get();
-    } else {
-        $coins = Coins::where('id', 5)
-                      ->orderBy('price', 'asc')
-                      ->skip($offset)
-                      ->take($limit)
-                      ->get();
-    }
-
-    if ($coins->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No Best Offer data available.',
-        ], 200);
-    }
-
-    // **Map Coins Data with Transaction Count (Only if user has 1+ coins)**
-    $coinsData = $coins->map(function ($coin) use ($transactionsCount, $user) {
-        $data = [
-            'id' => $coin->id,
-            'price' => $coin->price,
-            'coins' => $coin->coins,
-            'save' => $coin->save,
-            'popular' => $coin->popular,
-            'total_count' => $coin->count ?? 0,
-            'best_offer' => $coin->best_offer,
-            'updated_at' => Carbon::parse($coin->updated_at)->format('Y-m-d H:i:s'),
-            'created_at' => Carbon::parse($coin->created_at)->format('Y-m-d H:i:s'),
-        ];
-
-        // **Only include transactions count if user has coins > 0**
-        if ($user->coins > 0) {
-            $data['total_count'] = $transactionsCount;
+    public function best_offers(Request $request)
+    {
+        $authenticatedUser = auth('api')->user();
+        if (!$authenticatedUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized. Please provide a valid token.',
+            ], 401);
         }
-
-        return $data;
-    });
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Best Offers listed successfully.',
-        'total' => $coins->count(),
-        'data' => $coinsData,
-    ], 200);
-}
-
+    
+        $user_id = $request->input('user_id');
+        $offset = $request->input('offset', 0);  // Default offset to 0 if not provided
+        $limit = $request->input('limit', 10);   // Default limit to 10 if not provided
+    
+        if (empty($user_id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'user_id is empty.',
+            ], 200);
+        }
+    
+        $user = Users::find($user_id);
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User not found.',
+            ], 200);
+        }
+    
+        $transactionsCount = 0;
+    
+        // **Only check transactions if user has 1 or more coins**
+        if ($user->coins > 0) {
+            $transactionsCount = Transactions::where('type', 'add_coins')
+                ->where('datetime', '>=', Carbon::now()->subDays(3))
+                ->count();
+    
+                $transactionsCount += 150;
+        }
+    
+        // **Determine coin offers based on user's coins**
+        if ($user->coins == 0) {
+            $coins = Coins::where('id', 9)
+                          ->orderBy('price', 'asc')
+                          ->skip($offset)
+                          ->take($limit)
+                          ->get();
+        } else {
+            $coins = Coins::where('id', 5)
+                          ->orderBy('price', 'asc')
+                          ->skip($offset)
+                          ->take($limit)
+                          ->get();
+        }
+    
+        if ($coins->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No Best Offer data available.',
+            ], 200);
+        }
+    
+        // **Map Coins Data with Transaction Count (Only if user has 1+ coins)**
+        $coinsData = $coins->map(function ($coin) use ($transactionsCount, $user) {
+            $data = [
+                'id' => $coin->id,
+                'price' => $coin->price,
+                'coins' => $coin->coins,
+                'save' => $coin->save,
+                'popular' => $coin->popular,
+                'total_count' => $coin->count ?? 0,
+                'best_offer' => $coin->best_offer,
+                'updated_at' => Carbon::parse($coin->updated_at)->format('Y-m-d H:i:s'),
+                'created_at' => Carbon::parse($coin->created_at)->format('Y-m-d H:i:s'),
+            ];
+    
+            // **Only include transactions count if user has coins > 0**
+            // **If user has 0 coins, set total_count to 100**
+            if ($user->coins == 0) {
+                $data['total_count'] = 100;
+            } else {
+                $data['total_count'] = $transactionsCount;
+            }
+    
+            return $data;
+        });
+    
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Best Offers listed successfully.',
+            'total' => $coins->count(),
+            'data' => $coinsData,
+        ], 200);
+    }
 
 public function transaction_list(Request $request) {
     $authenticatedUser = auth('api')->user();

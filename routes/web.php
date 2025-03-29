@@ -302,6 +302,9 @@ Route::group(['middleware' => ['verified']], function () {
     Route::get('/users-verification/{id}/edit', [UsersVerificationController::class, 'edit'])->name('users-verification.edit');
     Route::put('/users-verification/{id}', [UsersVerificationController::class, 'update'])->name('users-verification.update');
      Route::get('/payments/download-export', [PaymentsController::class, 'handleDownloadOrExport'])->name('payments.downloadOrExport');
+     Route::get('/withdrawalsreports', [WithdrawalsController::class, 'withdrawalsReport'])
+     ->name('withdrawalsreports.index');
+ 
 
 
     Route::post('/coins/update-status', [CoinsController::class, 'updateStatus'])->name('coins.updateStatus');
