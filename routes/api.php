@@ -77,4 +77,5 @@ Route::group([
     Route::post('gifts_list', [AuthController::class, 'gifts_list']);
     Route::post('send_gifts', [AuthController::class, 'send_gifts']);
     Route::post('createUpigateway', [AuthController::class, 'createUpigateway']);
+    Route::post('whatsapplink_list', [AuthController::class, 'whatsapplink_list']);
 });

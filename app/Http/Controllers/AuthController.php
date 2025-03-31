@@ -11,6 +11,7 @@ use App\Models\Avatars;
 use App\Models\Coins;
 use App\Models\SpeechText;  
 use App\Models\Appsettings; 
+use App\Models\Whatsapplink;
 use App\Models\Ratings; 
 use App\Models\ScreenNotifications;
 use App\Models\Gifts;
@@ -36,7 +37,7 @@ use Berkayk\OneSignal\OneSignalFacade as OneSignal;
 class AuthController extends Controller
 {
     public function __construct(){
-        $this->middleware('auth:api', ['except' => ['login','register','send_otp','avatar_list','speech_text','settings_list','appsettings_list','add_coins','cron_jobs','cron_updates','explaination_video_list','gifts_list','createUpigateway']]);
+        $this->middleware('auth:api', ['except' => ['login','register','send_otp','avatar_list','speech_text','settings_list','appsettings_list','add_coins','cron_jobs','cron_updates','explaination_video_list','gifts_list','createUpigateway','whatsapplink_list']]);
     }
  
     public function register(Request $request)
@@ -3870,5 +3871,48 @@ public function send_gifts(Request $request)
             'gift_coins' => $gift_coins,
         ],
     ], 200);
+}
+
+    
+public function whatsapplink_list(Request $request)
+{
+    $language = $request->input('language');
+    
+    if (empty($language)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'language is empty.',
+        ], 200);
+    }
+
+    $whatsapplink = Whatsapplink::where('language', $language)
+                 ->get();
+
+    if ($whatsapplink->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No Whatsapp Link found for this user.',
+        ], 200);
+    }
+
+    $whatsapplinkData = [];
+    foreach ($whatsapplink as $link) {
+    foreach ($whatsapplink as $language) {
+        $whatsapplinkData[] = [
+            'id' => $whatsapplink->id,
+            'language' => $whatsapplink->language,
+            'link' => $whatsapplink->link,
+            'updated_at' => $whatsapplink->updated_at->format('Y-m-d H:i:s'),
+            'created_at' => $whatsapplink->created_at->format('Y-m-d H:i:s'),
+        ];
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Whatsapp Link list retrieved successfully.',
+        'data' => $whatsapplinkData,
+    ], 200);
+}
+
 }
 }

@@ -11,6 +11,7 @@ use App\Http\Controllers\WithdrawalsController;
 use App\Http\Controllers\RatingsController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\AwardController;
+use App\Http\Controllers\WhatsapplinkController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\AppsettingsController;
 use App\Http\Controllers\CoinsController;
@@ -288,6 +289,7 @@ Route::group(['middleware' => ['verified']], function () {
     });
     Route::resource('avatar', AvatarsController::class);
     Route::resource('speech_texts', SpeechTextController::class);
+    Route::resource('whatsapplinks', WhatsapplinkController::class);
      Route::resource('personal_notifications', PersonalNotificationsController::class);
     Route::resource('screen_notifications', ScreenNotificationsController::class);
     Route::get('screen_notifications/{id}/edit', [ScreenNotificationsController::class, 'edit'])->name('screen_notifications.edit');

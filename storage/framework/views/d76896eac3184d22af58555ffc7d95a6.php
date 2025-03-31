@@ -114,6 +114,14 @@
                 </a>
                 </li>
                 <li class="dash-item">
+                <a href="<?php echo e(route('whatsapplinks.index')); ?>" class="dash-link">
+                    <span class="dash-micon">
+                        <i class="ti ti-brand-whatsapp"></i> <!-- Icon for WhatsApp -->
+                    </span>
+                    <span class="dash-mtext"><?php echo e(__('Whatsapp Links')); ?></span>
+                </a>
+                </li>
+                <li class="dash-item">
                     <a href="<?php echo e(route('notifications.index')); ?>" class="dash-link">
                         <span class="dash-micon">
                             <i class="ti ti-bell"></i> <!-- Icon for notifications -->

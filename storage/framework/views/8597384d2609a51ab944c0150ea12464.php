@@ -30,7 +30,7 @@
                             <input type="date" name="filter_date" id="filter_date" class="form-control" value="<?php echo e(request()->get('filter_date')); ?>" onchange="this.form.submit()">
                         </div>
                         <div class="col-md-3 ms-auto">
-                            <label for="search"><?php echo e(__('Search All Users')); ?></label>
+                            <label for="search"><?php echo e(__('Search Users')); ?></label>
                             <input type="text" name="search" id="search" class="form-control"
                              value="<?php echo e(request()->get('search')); ?>" placeholder="Enter Name, Mobile">
                         </div>
