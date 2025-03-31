@@ -11,13 +11,15 @@ class UserCallsController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
-        $filterDate = $request->get('filter_date') ?: now()->toDateString(); // Default to today's date
+        $filterDate = $request->get('filter_date');  // Only apply if provided
         $type = $request->get('type'); 
         $language = $request->get('language'); 
         
         // Get the user calls with relationships
         $usercalls = UserCalls::with(['user', 'callusers'])
-            ->whereDate('datetime', Carbon::parse($filterDate)->format('Y-m-d')) // Always filter by date
+            ->when($filterDate, function ($query, $filterDate) {  // Only apply date filter if provided
+                return $query->whereDate('datetime', Carbon::parse($filterDate)->format('Y-m-d'));
+            })
             ->when($type, function ($query, $type) {
                 return $query->where('type', $type);
             })
@@ -35,9 +37,8 @@ class UserCallsController extends Controller
                 });
             })
             ->orderBy('datetime', 'desc')
-            ->get();
+            ->paginate(10);
     
-
 
         // Calculate the duration for each user call
         foreach ($usercalls as $usercall) {

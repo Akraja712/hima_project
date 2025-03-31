@@ -257,7 +257,8 @@ public function withdrawalsReport(Request $request)
     // Query builder
     $query = Withdrawals::where('status', 1)
         ->select(DB::raw('DATE(datetime) as date'), DB::raw('SUM(amount) as total'))
-        ->groupBy('date');
+        ->groupBy('date')
+        ->orderBy('date', 'desc');  // ✅ Order by date descending (latest first)
 
     // Apply date filter only if a date is selected
     if ($date) {

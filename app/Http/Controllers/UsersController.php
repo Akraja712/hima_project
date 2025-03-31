@@ -13,31 +13,29 @@ class UsersController extends Controller
     public function index(Request $request)
     {
         $search = $request->get('search');
-        $filterDate = $request->get('filter_date') ?: now()->toDateString(); // Ensure it defaults to today
+        $filterDate = $request->get('filter_date');  
         $gender = $request->get('gender');
         $language = $request->get('language');
     
-     $users = Users::query()
-            ->when(!$search, function ($query) use ($filterDate) {
-                // Filter only users created today (without time)
-                return $query->whereDate('created_at', $filterDate);
+        $users = Users::query()
+            ->when($filterDate, function ($query) use ($filterDate) {
+                $query->whereDate('datetime', $filterDate);
             })
             ->when($search, function ($query) use ($search) {
-                return $query->where(function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
                     $query->where('name', 'like', '%' . $search . '%')
                           ->orWhere('mobile', 'like', '%' . $search . '%')
                           ->orWhere('language', 'like', '%' . $search . '%');
                 });
             })
             ->when($gender, function ($query) use ($gender) {
-                return $query->where('gender', $gender);
-            })
+                $query->where('gender', $gender);
+            })  
             ->when($language, function ($query) use ($language) {
-                return $query->where('language', $language);
+                $query->where('language', $language);
             })
-          
-            ->orderBy('created_at', 'desc')
-            ->get();
+            ->orderBy('created_at', 'desc')    // Keep the sorting
+            ->paginate(10);                     // Use cursor to iterate efficiently
     
         return view('users.index', compact('users'));
     }

@@ -29,15 +29,16 @@
                             <input type="date" name="filter_date" id="filter_date" class="form-control" value="{{ request()->get('filter_date') }}" onchange="this.form.submit()">
                         </div>
                         <div class="col-md-3 ms-auto">
-                            <label for="search">{{ __('Search All Users') }}</label>
-                            <input type="text" name="search" id="search" class="form-control" value="{{ request()->get('search') }}" placeholder="Enter Name, Mobile" onkeyup="startFilterTimer()">
+                            <label for="search">{{ __('Search Users') }}</label>
+                            <input type="text" name="search" id="search" class="form-control"
+                             value="{{ request()->get('search') }}" placeholder="Enter Name, Mobile">
                         </div>
                     </div>
                 </form>
             </div>
             <div class="card-body table-border-style">
                 <div class="table-responsive">
-                    <table class="table" id="pc-dt-simple">
+                    <table class="table">
                         <thead>
                             <tr>
                             <th>{{ __('Actions') }}</th>
@@ -136,7 +137,7 @@
                                     <td>
                                         @if($user->avatar && $user->avatar->image)
                                         <a href="{{ asset('storage/app/public/' . $user->avatar->image) }}" data-lightbox="image-{{ $user->avatar->id }}">
-                                                <img class="user-img img-thumbnail img-fluid" 
+                                                <img loading="lazy" class="user-img img-thumbnail img-fluid" 
                                                     src="{{ asset('storage/app/public/' . $user->avatar->image) }}" 
                                                     alt="Avatar Image" 
                                                     style="max-width: 100px; max-height: 100px;">
@@ -151,6 +152,21 @@
                             @endforeach
                         </tbody>
                     </table>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <p class="mb-0">
+                                Showing 
+                                <strong>{{ $users->firstItem() }}</strong> 
+                                to 
+                                <strong>{{ $users->lastItem() }}</strong> 
+                                of 
+                                <strong>{{ $users->total() }}</strong> users
+                            </p>
+                        </div>
+                        <div>
+                            {{ $users->appends(request()->query())->links('pagination::bootstrap-4') }}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
