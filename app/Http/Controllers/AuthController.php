@@ -916,6 +916,7 @@ public function settings_list(Request $request)
             'demo_video' => $item->demo_video,
             'minimum_withdrawals' => $item->minimum_withdrawals,
             'payment_gateway_type' => $item->payment_gateway_type,
+            'auto_disable_info ' => $item->auto_disable_info,
         ];
     }
 
@@ -1508,7 +1509,7 @@ public function calls_status_update(Request $request)
                     ]);
     
                     OneSignal::sendNotificationCustom([
-                        "app_id" => "2c7d72ae-8f09-48ea-a3c8-68d9c913c592",
+                        "app_id" => "2c7d72ae-8f09-48ea-a3c8-",
                         "include_external_user_ids" => [(string) $maleUser->id],
                         "headings" => ["en" => "{$femaleUser->name} is now online."],
                         "contents" => ["en" => "Let's make a conversation!"],
@@ -3642,7 +3643,7 @@ public function cron_jobs(Request $request)
 
                 // Prepare notification payload
                 $payload = [
-                    "app_id" => "2c7d72ae-8f09-48ea-a3c8-68d9c913c592",
+                    "app_id" => "2c7d72ae-8f09-48ea-a3c8-",
                     "filters" => $filters,
                     "headings" => ["en" => $notification->title],
                     "contents" => ["en" => $notification->description],
@@ -3885,25 +3886,25 @@ public function whatsapplink_list(Request $request)
         ], 200);
     }
 
-    $whatsapplink = Whatsapplink::where('language', $language)
-                 ->get();
+    $whatsapplink = Whatsapplink::where('language', $language)->get();
 
     if ($whatsapplink->isEmpty()) {
         return response()->json([
             'success' => false,
-            'message' => 'No Whatsapp Link found for this user.',
+            'message' => 'No Whatsapp Link found for this language.',
         ], 200);
     }
 
     $whatsapplinkData = [];
+
+    // ✅ Correct iteration over the collection
     foreach ($whatsapplink as $link) {
-    foreach ($whatsapplink as $language) {
         $whatsapplinkData[] = [
-            'id' => $whatsapplink->id,
-            'language' => $whatsapplink->language,
-            'link' => $whatsapplink->link,
-            'updated_at' => $whatsapplink->updated_at->format('Y-m-d H:i:s'),
-            'created_at' => $whatsapplink->created_at->format('Y-m-d H:i:s'),
+            'id' => $link->id,                              // Use $link instead of $whatsapplink
+            'language' => $link->language,
+            'link' => $link->link,
+            'updated_at' => $link->updated_at->format('Y-m-d H:i:s'),
+            'created_at' => $link->created_at->format('Y-m-d H:i:s'),
         ];
     }
 
@@ -3912,7 +3913,6 @@ public function whatsapplink_list(Request $request)
         'message' => 'Whatsapp Link list retrieved successfully.',
         'data' => $whatsapplinkData,
     ], 200);
-}
 
 }
 }

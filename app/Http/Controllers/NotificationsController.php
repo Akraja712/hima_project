@@ -99,7 +99,7 @@ class NotificationsController extends Controller
             }
     
                 $payload = [
-                    "app_id" => "2c7d72ae-8f09-48ea-a3c8-68d9c913c592",
+                    "app_id" => "2c7d72ae-8f09-48ea-a3c8-",
                     "filters" => $filters,
                     "headings" => ["en" => $notification->title],
                     "contents" => ["en" => $notification->description],

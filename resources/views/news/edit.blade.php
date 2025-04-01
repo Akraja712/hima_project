@@ -51,6 +51,11 @@
                 </select>
             </div>
 
+            <div class="form-group">
+                <label for="auto_disable_info">Auto Disable Info</label>
+                <textarea name="auto_disable_info" id="auto_disable_info" class="form-control" rows="3" required>{{ $news->auto_disable_info }}</textarea>
+            </div>
+
             <div class="box-footer">
                 <button type="submit" class="btn btn-primary">Update</button>
             </div>
